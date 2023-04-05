@@ -3,9 +3,12 @@ package ro.pub.cs.systems.eim.colocviu1_1;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.app.Activity;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -24,6 +27,8 @@ public class Colocviu1_1MainActivity extends AppCompatActivity {
     private Button buttonNav;
 
     private EditText editText;
+
+    private IntentFilter intentFilter = new IntentFilter();
 
     CardinalButtonOnClickListener cardinalButtonOnClickListener = new CardinalButtonOnClickListener();
     class CardinalButtonOnClickListener implements View.OnClickListener {
@@ -46,6 +51,12 @@ public class Colocviu1_1MainActivity extends AppCompatActivity {
             }
             count++;
             editText.setText(String.join(", ", cardinalPoints));
+            if (count >= 4) {
+                Intent intent = new Intent(getApplicationContext(), Colocviu1_1Service.class);
+                intent.putExtra(Constants.CARDINAL_EDIT_TEXT, editText.getText().toString());
+                intent.putExtra(Constants.CLICK_COUNT, count);
+                startService(intent);
+            }
         }
     }
 
@@ -94,6 +105,8 @@ public class Colocviu1_1MainActivity extends AppCompatActivity {
                 count = Integer.parseInt(savedInstanceState.getString(Constants.CLICK_COUNT));
             }
         }
+
+        intentFilter.addAction(Constants.ACTION);
     }
 
     @Override
@@ -116,6 +129,8 @@ public class Colocviu1_1MainActivity extends AppCompatActivity {
         savedInstanceState.putString(Constants.CLICK_COUNT, String.valueOf(count));
     }
 
+
+
     @Override
     protected void onRestoreInstanceState(Bundle savedInstanceState) {
         super.onRestoreInstanceState(savedInstanceState);
@@ -127,7 +142,27 @@ public class Colocviu1_1MainActivity extends AppCompatActivity {
         if (savedInstanceState.getString(Constants.CLICK_COUNT) != null) {
             count = Integer.parseInt(savedInstanceState.getString(Constants.CLICK_COUNT));
         }
+    }
 
+    private MessageBroadcastReceiver messageBroadcastReceiver = new MessageBroadcastReceiver();
+    private class MessageBroadcastReceiver extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            Toast.makeText(getApplicationContext(),"Service result: " +
+                intent.getStringExtra(Constants.BROADCAST_INTENT_KEY), Toast.LENGTH_LONG).show();
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        registerReceiver(messageBroadcastReceiver, intentFilter);
+    }
+
+    @Override
+    protected void onPause() {
+        unregisterReceiver(messageBroadcastReceiver);
+        super.onPause();
     }
 }
 
